@@ -10,9 +10,7 @@ module.exports = class instagramGrabber {
   }
   async launchBrowser() {
     return new Promise(async (resolve, reject) => {
-      const browser = await puppeteer.launch({
-        "headless": false
-      });
+      const browser = await puppeteer.launch();
       this.page = await browser.newPage();
       await resolve();
     });
@@ -31,13 +29,13 @@ module.exports = class instagramGrabber {
       });
     });
   }
-  async parseAccount(account, count) {
+  async parseAccount(account, count = 10) {
     return new Promise(async (resolve, reject) => {
       await this.page.goto(`https://www.instagram.com/${account}/`);
       await this.page.waitForSelector('.v1Nh3.kIKUG', {
         timeout: 0
       }).then(async () => {
-        let posts = await this.page.evaluate(function() {
+        let posts = await this.page.evaluate((count) => {
           arr = [];
           i = 0
           document.querySelectorAll('.v1Nh3.kIKUG').forEach(function(el) {
@@ -49,7 +47,7 @@ module.exports = class instagramGrabber {
             }
           });
           return arr;
-        });
+        }, count);
         for(let i = 0; i < posts.length; i++) {
           await this.page.goto(posts[i] + '?__a=1', {waitUntil: 'networkidle2'});
           let sourceUrl = await this.page.evaluate(function() {
