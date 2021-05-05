@@ -1,5 +1,5 @@
 {
-  "name": "@agasparyan/instagram-posts-grabber",
+  "name": "instagram-posts-grabber",
   "version": "1.0.0",
   "description": "instagram account's posts grabber",
   "main": "index.js",
