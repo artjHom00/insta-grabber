@@ -1,6 +1,6 @@
 {
   "name": "instagram-posts-grabber",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "description": "instagram account's posts grabber",
   "main": "index.js",
   "scripts": {
