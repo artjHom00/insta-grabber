@@ -1,5 +1,7 @@
-console.clear();
 const puppeteer = require('puppeteer');
+const fs = require('fs');
+const path = require('path');
+const axios = require('axios').default;
 
 module.exports = class instagramGrabber {
   constructor(login, password) {
@@ -10,8 +12,14 @@ module.exports = class instagramGrabber {
   }
   async launchBrowser() {
     return new Promise(async (resolve, reject) => {
-      const browser = await puppeteer.launch();
+      const browser = await puppeteer.launch({
+        defaultViewport: {
+          "width": 1920,
+          "height": 1080
+        }
+      });
       this.page = await browser.newPage();
+      await this.page.setUserAgent('Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/74.0.3729.169 Safari/537.36');
       await resolve();
     });
   }
@@ -29,9 +37,11 @@ module.exports = class instagramGrabber {
       });
     });
   }
-  async parseAccount(account, count = 10) {
+  async parseAccount(account, count = 10, downloadPath = false) {
     return new Promise(async (resolve, reject) => {
-      await this.page.goto(`https://www.instagram.com/${account}/`);
+      await this.page.goto(`https://www.instagram.com/${account}/`, {
+        waitUntil: 'networkidle2'
+      });
       await this.page.waitForSelector('.v1Nh3.kIKUG', {
         timeout: 0
       }).then(async () => {
@@ -50,21 +60,58 @@ module.exports = class instagramGrabber {
         }, count);
         for(let i = 0; i < posts.length; i++) {
           await this.page.goto(posts[i] + '?__a=1', {waitUntil: 'networkidle2'});
-          let sourceUrl = await this.page.evaluate(function() {
+          let source = await this.page.evaluate(function() {
             try {
-              let source = JSON.parse(document.querySelector('pre').textContent).graphql.shortcode_media.edge_sidecar_to_children.edges[1].node.video_url
-              if(!source) {
-                source = JSON.parse(document.querySelector('pre').textContent).graphql.shortcode_media.display_resources[2].src
+              let url = JSON.parse(document.querySelector('pre').textContent).graphql.shortcode_media.edge_sidecar_to_children.edges[1].node.video_url;
+              let type = 'video'
+              if(!url) {
+                url = JSON.parse(document.querySelector('pre').textContent).graphql.shortcode_media.display_resources[2].src;
+                type = 'photo'
               }
-              return source;
+              let caption = null;
+              try {
+                caption = JSON.parse(document.querySelector('pre').textContent).graphql.shortcode_media.edge_media_to_caption.edges[0].node.text;
+              } catch {
+                caption = '';
+              }
+              let timestamp = JSON.parse(document.querySelector('pre').textContent).graphql.shortcode_media.taken_at_timestamp;
+              let shortcode = JSON.parse(document.querySelector('pre').textContent).graphql.shortcode_media.shortcode;
+              return {
+                url,
+                type,
+                caption,
+                timestamp,
+                shortcode
+              };
             } catch {
               return false;
             }
           });
-          this.parsed.push(sourceUrl);
+          if(source) {
+            await this.parsed.push(source);
+          }
+        }
+        if(downloadPath) {
+          for(let i = 0; i < this.parsed.length; i++) {
+            await this.downloadFile(this.parsed[i].url, downloadPath, this.parsed[i].shortcode + (this.parsed[i].type == 'video' ? '.mp4' : '.png'))
+          }
         }
         resolve(this.parsed);
       });
     });
   }
+  async downloadFile(fileUrl, downloadFolder, fileName) {
+    const localFilePath = path.resolve(downloadFolder, fileName);
+    try {
+      const response = await axios({
+        method: 'GET',
+        url: fileUrl,
+        responseType: 'stream',
+      });
+  
+      response.data.pipe(fs.createWriteStream(localFilePath));
+    } catch (err) {
+      throw new Error(err);
+    }
+  }; 
 } 

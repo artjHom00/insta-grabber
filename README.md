@@ -1,6 +1,6 @@
 # Instagram Posts Grabber
 
-### Grabs source links from instagram user's last posts 
+### Grabs instagram user's last posts & downloads if needed 
 ## Installing
 
 ```sh
@@ -13,18 +13,18 @@ $ npm i instagram-posts-grabber
 
 ### .launchBrowser()
 ### .authorize()
-### .parseAccount(account, count)
+### .parseAccount(account, count, path)
 
 
 
 ## Usage
 
 ```js
-const instaGrabber = require('./index');
+const instaGrabber = require('instagram-posts-grabber');
 const parser = new instaGrabber('examplemail@gmail.com', 'examplepass');
 
 parser.launchBrowser().then(function() {
-	parser.parseAccount('exampleuser').then(function(data) {
+	parser.parseAccount('exampleuser', 10, './').then(function(data) {
   		console.log(data);
 	}).catch(function() {
   		console.log('[error] while parsing');
