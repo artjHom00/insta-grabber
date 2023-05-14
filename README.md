@@ -1,4 +1,4 @@
-# Instagram Posts Grabber
+# Instagram Posts Grabber [deprecated, not working]
 
 ### Grabs instagram user's last posts & downloads if needed 
 ## Installing
